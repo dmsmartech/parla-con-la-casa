@@ -1,0 +1,60 @@
+alias: Sicurezza a voce
+description: Movimento in giardino con allarme spento, poi conversazione per attivarlo e controllare porte e finestre.
+mode: parallel
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.movimento_giardino
+    to: "on"
+    id: movimento
+  - trigger: conversation
+    id: allarme
+    command:
+      - "[(sì|si|ok|okay|certo|va bene|perfetto)] [per favore] (attiva|inserisci|accendi|arma) [(subito|adesso|ora)] (l'allarme|allarme|l'antifurto|antifurto) [(subito|adesso|ora)] [(per favore|grazie)]"
+      - "[(sì|si|ok|okay|certo|va bene|perfetto)] (attivalo|inseriscilo|accendilo|armalo) [(subito|adesso|ora)] [(per favore|grazie)]"
+      - "[(ok|okay|certo)] (puoi|potresti) (attivare|inserire|armare) [(subito|adesso|ora)] (l'allarme|allarme|l'antifurto|antifurto) [(per favore|grazie)]"
+  - trigger: conversation
+    id: porte
+    command:
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] ci sono (porte|finestre|portefinestre|porte finestre|porte-finestre) [(o|e) (porte|finestre)] [(rimaste|rimasti)] [ancora] aperte"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] c'è (qualche|una) (porta|finestra|portafinestra) [(o|e) (porta|finestra)] [(rimasta|ancora)] aperta"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] (c'è|è rimasto|ho lasciato) qualcosa [(di|ancora)] aperto"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] è tutto chiuso"
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: movimento
+          - condition: state
+            entity_id: alarm_control_panel.allarme_casa
+            state: disarmed
+        sequence:
+          - action: notify.mobile_app_IL_TUO_IPHONE
+            data:
+              title: VOICE ASSISTANT
+              message: "Ho rilevato un movimento in giardino, ma l'allarme non è inserito."
+              data:
+                tag: voiceassistant
+      - conditions:
+          - condition: trigger
+            id: allarme
+        sequence:
+          - action: alarm_control_panel.alarm_arm_away
+            target:
+              entity_id: alarm_control_panel.allarme_casa
+          - set_conversation_response: "Fatto! Allarme attivato."
+      - conditions:
+          - condition: trigger
+            id: porte
+        sequence:
+          - if:
+              - condition: state
+                entity_id: binary_sensor.porte_e_finestre
+                state: "on"
+            then:
+              - set_conversation_response: >-
+                  Attenzione, sono ancora aperte:
+                  {{ expand('binary_sensor.porte_e_finestre')
+                     | selectattr('state', 'eq', 'on')
+                     | map(attribute='name') | join(', ') }}.
+            else:
+              - set_conversation_response: "No, tutto in sicurezza!"

@@ -1,0 +1,50 @@
+alias: Demo Parla con la casa
+description: La conversazione del video, con risposte fisse. Non comanda nessun dispositivo.
+mode: parallel
+triggers:
+  - trigger: state
+    entity_id: input_button.demo_conversazione
+    id: inizio
+  - trigger: conversation
+    id: allarme
+    command:
+      - "[(sì|si|ok|okay|certo|va bene|perfetto)] [per favore] (attiva|inserisci|accendi|arma|metti) [(subito|adesso|ora)] (l'allarme|allarme|l'antifurto|antifurto) [perimetrale] [(subito|adesso|ora)] [(per favore|grazie)]"
+      - "[(sì|si|ok|okay|certo|va bene|perfetto)] (attivalo|inseriscilo|accendilo|armalo|mettilo) [(subito|adesso|ora)] [(per favore|grazie)]"
+      - "[(sì|si|ok|okay|certo)] (puoi|potresti|riesci a) (attivare|inserire|accendere|armare) [(subito|adesso|ora)] (l'allarme|allarme|l'antifurto|antifurto) [perimetrale] [(subito|adesso|ora)] [(per favore|grazie)]"
+      - "[(sì|si|ok|okay|certo)] (puoi|potresti) (attivarlo|inserirlo|accenderlo|armarlo) [(subito|adesso|ora)] [(per favore|grazie)]"
+      - "[(sì|si|ok|okay|certo)] (voglio|vorrei) (attivare|inserire) (l'allarme|allarme|l'antifurto|antifurto)"
+  - trigger: conversation
+    id: porte
+    command:
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] ci sono (porte|finestre|portefinestre|porte finestre|porte-finestre) [(o|e) (porte|finestre)] [(rimaste|rimasti)] [ancora] aperte"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] (porte|finestre|portefinestre|porte finestre|porte-finestre) [(o|e) (porte|finestre)] [(rimaste|rimasti)] [ancora] aperte"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] c'è (qualche|una) (porta|finestra|portafinestra) [(o|e) (porta|finestra)] [(rimasta|ancora)] aperta"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] (c'è|è rimasto|ho lasciato|abbiamo lasciato) qualcosa [(di|ancora)] aperto"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] è tutto chiuso"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] (le|tutte le) (porte|finestre) [(e|o) [le] (porte|finestre)] sono chiuse"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] la casa è (chiusa|al sicuro|sicura)"
+      - "[(perfetto|ok|okay|bene|benissimo|ottimo|grazie)] è tutto (a posto|in sicurezza|sicuro)"
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: inizio
+        sequence:
+          - action: notify.mobile_app_IL_TUO_IPHONE
+            data:
+              title: VOICE ASSISTANT
+              message: "Ehi, ho rilevato un movimento in giardino, ma l'allarme non è inserito."
+              data:
+                tag: voiceassistant
+      - conditions:
+          - condition: trigger
+            id: allarme
+        sequence:
+          - delay:
+              milliseconds: 400
+          - set_conversation_response: "Fatto! Allarme perimetrale attivato."
+      - conditions:
+          - condition: trigger
+            id: porte
+        sequence:
+          - set_conversation_response: "No, tutto in sicurezza!"
